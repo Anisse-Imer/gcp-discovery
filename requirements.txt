@@ -1,0 +1,6 @@
+# SQL inject parameters
+jinja2
+
+# Google connectivity
+google_oauth2_tool
+google-cloud-bigquery

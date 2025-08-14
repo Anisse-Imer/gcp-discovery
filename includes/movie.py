@@ -1,9 +1,9 @@
 import json
 
 class Movie:
+    imdb:str
     title:str
     year:int
-    imdb:str
     rank:int
     actors:list[str]
     aka:str
