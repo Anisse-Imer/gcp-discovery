@@ -1,45 +1,39 @@
-import os
 import json
-import requests
 from requests import Response
 
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
-from includes.movie import Movie
+from includes.objects.movie import Movie
+from includes.fetchers.imdb_fetcher import IMDBFetcher
 
-try:
-    # BigQuery API auth
-    parameters:dict
-    with open('client_secret.json') as json_file:
-        parameters = json.load(json_file)
-    credentialsPath = r'client_secret.json'
-    credentials = service_account.Credentials.from_service_account_file(credentialsPath)
-    client = bigquery.Client(credentials=credentials)
+def main():
+    try:
+        # BigQuery API auth
+        parameters:dict
+        with open('client_secret.json') as json_file:
+            parameters = json.load(json_file)
+        credentialsPath = r'client_secret.json'
+        credentials = service_account.Credentials.from_service_account_file(credentialsPath)
+        client = bigquery.Client(credentials=credentials)
 
-    # Fetch data
-    movie_name:str = "American-Psycho"
-    response:Response = requests.get(
-        f"https://imdb.iamidiotareyoutoo.com/search?q={movie_name}",
-        headers={}
-    )
-    movies:list[Movie] = []
-    if response.status_code == 200:
-        # Get the data
-        data:dict = response.json()
-        # json.dump(data, open("data.json ", "w"), indent=4)
+        movie_fetcher:IMDBFetcher = IMDBFetcher(domain="https://imdb.iamidiotareyoutoo.com")
+        movies:list[Movie] = movie_fetcher.search(query="Spider-Man")
 
-        # Transform the raw data into Movie objects
-        for dict in data["description"]:
-            movies.append(Movie(dict))
+        if movies:
+            list_movies_dict:list[dict] = []
+            for movie in movies:
+                movie_dict:dict = movie.to_dict()
+                movie_dict.pop("actors")
+                list_movies_dict.append(movie_dict)
 
-    if movies:
-        query = f"""
-            CALL `{parameters.get("project_id", "")}.database_name.object_name`()
-        """
-        results = client.query(query).result()
-        for row in results:
-            print(row)
+            table_ref = client.dataset("cinema_industry_schema").table("movies")
+            errors = client.insert_rows_json(table_ref, list_movies_dict)
+            if errors:
+                print(errors)
 
-except Exception as e:
-    print(e)
+    except Exception as e:
+        print(e)
+
+if __name__ == "__main__":
+    main()
