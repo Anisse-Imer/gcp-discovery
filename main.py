@@ -22,16 +22,26 @@ def main():
 
         if movies:
             list_movies_dict:list[dict] = []
+            movie_actors:list[dict] = []
             for movie in movies:
                 movie_dict:dict = movie.to_dict()
-                movie_dict.pop("actors")
+                for actor in movie_dict.pop("actors"):
+                    if actor != "" :
+                        movie_actors.append({
+                            "movie_id" : movie_dict["imdb"],
+                            "actor_name" : actor
+                        })
                 list_movies_dict.append(movie_dict)
-
-            table_ref = client.dataset("cinema_industry_schema").table("movies")
-            errors = client.insert_rows_json(table_ref, list_movies_dict)
+            # Save movies
+            table_ref_movies = client.dataset("cinema_industry_schema").table("movies")
+            table_ref_casts = client.dataset("cinema_industry_schema").table("casts")            
+            errors = client.insert_rows_json(table_ref_movies, list_movies_dict)
             if errors:
-                print(errors)
-
+                print("#"*5 , "MOVIES", "#"*5, errors)
+            # Save casts
+            errors = client.insert_rows_json(table_ref_casts, movie_actors)
+            if errors:
+                print("#"*5 , "CASTS", "#"*5, errors)
     except Exception as e:
         print(e)
 
