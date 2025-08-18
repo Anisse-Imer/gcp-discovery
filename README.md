@@ -3,6 +3,7 @@ Project to learn about the Google Cloud Plateform development environment for Da
 The Job build permit to mine data from a movie API based on random keywords.
 
 Author : Anisse Imer
+Doc : https://anisse-imerzoukene.notion.site/Mini-Project-6-Google-Cloud-Platform-for-data-mining-253d37ed979d8029a287fcbab4fc0e11?source=copy_link
 
 # Deploy
 - You need first to setup BigQuery (API, and init the database).
