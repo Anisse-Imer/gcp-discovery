@@ -12,9 +12,8 @@ class IMDBFetcher:
 
     def search(self, query:str):
         # Fetch data
-        movie_name:str = "American-Psycho"
         response:Response = requests.get(
-            f"{self.api_domain}/search?q={movie_name}",
+            f"{self.api_domain}/search?q={query}",
             headers={}
         )
         movies:list[Movie] = []
