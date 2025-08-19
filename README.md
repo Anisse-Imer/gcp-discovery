@@ -31,7 +31,7 @@ gcloud functions deploy cinema_data_fetcher \
 # Deploy - Scheduler (every 5 minutes)
 gcloud scheduler jobs create http cinema-data-fetcher-job \
     --schedule="*/5 * * * *" \
-    --uri=https://europe-west1-striking-talent-462114-d2.cloudfunctions.net/cinema-data-fetcher \
+    --uri=https://europe-west1-striking-talent-462114-d2.cloudfunctions.net/cinema_data_fetcher \
     --http-method=GET \
     --time-zone="Europe/Paris" \
     --location=europe-west1
