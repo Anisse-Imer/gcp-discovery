@@ -2,6 +2,7 @@ import os
 import json
 from requests import Response
 
+from jinja2 import Template
 import functions_framework
 from wonderwords import RandomWord
 
@@ -14,6 +15,36 @@ from includes.fetchers.imdb_fetcher import IMDBFetcher
 def get_random_keywords(count=10):
     r = RandomWord()
     return r.random_words(count, word_min_length=3, word_max_length=12, include_parts_of_speech=["nouns"])
+
+def get_query_params(query_path:str, params:dict):
+    with open(query_path, 'r') as file:
+        query_template:Template = Template(file.read())
+    return query_template.render(params)
+
+def parse_existing_movies(big_query_client, movies:list[Movie], project_id:str) -> list[Movie]:
+    ids:list[str] = []
+    for movie in movies:
+        ids.append(movie.imdb)
+    
+    constraint:str = "'" + "', '".join(ids) + "'"
+    query:str = get_query_params(
+        query_path="./queries/process_pipeline/get_movies.sql", 
+        params = {
+            "project_id" : project_id,
+            "movies_id" : constraint
+        }
+    )
+    query_job = big_query_client.query(query)
+    rows = query_job.result()
+    existing_movies_id:list[str] = []
+    for row in rows:
+        existing_movies_id.append(row[0])
+    
+    movies_parsed:list[Movie] = []
+    for movie in movies:
+        if movie.imdb not in existing_movies_id:
+            movies_parsed.append(movie)
+    return movies_parsed
 
 @functions_framework.http
 def cinema_data_fetcher(request):
@@ -31,6 +62,7 @@ def cinema_data_fetcher(request):
         movies:list[Movie] = []
         for keyword in keywords:
             movies += movie_fetcher.search(query=keyword)
+        movies:list[Movie] = parse_existing_movies(big_query_client=client, movies=movies, project_id=parameters["project_id"])
         if movies:
             list_movies_dict:list[dict] = []
             movie_actors:list[dict] = []
@@ -43,6 +75,7 @@ def cinema_data_fetcher(request):
                             "actor_name" : actor
                         })
                 list_movies_dict.append(movie_dict)
+
 
             # Save movies
             table_ref_movies = client.dataset("cinema_industry_schema").table("movies")
